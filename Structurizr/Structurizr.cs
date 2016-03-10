@@ -19,6 +19,7 @@ namespace Structurizr
             Workspace workspace = new Workspace("Contoso University", "A software architecture model of the Contoso University sample project.");
             Model.Model model = workspace.Model;
             ViewSet views = workspace.Views;
+            views.Configuration.Metadata = "Top";
             Styles styles = views.Configuration.Styles;
 
             Person universityStaff = model.AddPerson("University Staff", "A staff member of the Contoso University.");
@@ -54,8 +55,8 @@ namespace Structurizr
             {
                 if (component.SourcePath != null)
                 {
-                    System.Console.WriteLine(component.SourcePath);
-                    component.SourcePath = component.SourcePath.Replace(@"C:\Users\simon\", "https://github.com/simonbrowndotje/ContosoUniversity/blob/master/");
+                    component.SourcePath = component.SourcePath.Replace(@"C:\Users\simon\ContosoUniversity\", "https://github.com/simonbrowndotje/ContosoUniversity/blob/master/");
+                    component.SourcePath = component.SourcePath.Replace('\\', '/');
                 }
             }
 
@@ -69,8 +70,11 @@ namespace Structurizr
             componentView.AddAllElements();
 
             // add some styling
-            styles.Add(new ElementStyle(Tags.Person) { Shape = Shape.Person });
+            styles.Add(new ElementStyle(Tags.Person) { Background = "#0d4d4d", Color = "#ffffff", Shape = Shape.Person });
+            styles.Add(new ElementStyle(Tags.SoftwareSystem) { Background = "#003333", Color = "#ffffff" });
+            styles.Add(new ElementStyle(Tags.Container) { Background = "#226666", Color = "#ffffff" });
             styles.Add(new ElementStyle("Database") { Shape = Shape.Cylinder });
+            styles.Add(new ElementStyle(Tags.Component) { Background = "#407f7f", Color = "#ffffff" });
 
             StructurizrClient structurizrClient = new StructurizrClient("key", "secret");
             structurizrClient.MergeWorkspace(9581, workspace);
