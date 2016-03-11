@@ -36,7 +36,7 @@ namespace Structurizr
             ComponentFinder componentFinder = new ComponentFinder(
                 webApplication,
                 typeof(ContosoUniversity.MvcApplication).Namespace, // doing this typeof forces the ContosoUniversity assembly to be loaded
-                new AssemblyScanningComponentFinderStrategy(
+                new TypeBasedComponentFinderStrategy(
                     new InterfaceImplementationTypeMatcher(typeof(System.Web.Mvc.IController), null, "ASP.NET MVC Controller"),
                     new ExtendsClassTypeMatcher(typeof(System.Data.Entity.DbContext), null, "Entity Framework DbContext")
                 ),
