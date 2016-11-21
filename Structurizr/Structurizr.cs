@@ -1,7 +1,6 @@
-﻿using Structurizr.Analysis;
+﻿using System;
+using Structurizr.Analysis;
 using Structurizr.Client;
-using Structurizr.Model;
-using Structurizr.View;
 using System.Linq;
 
 namespace Structurizr
@@ -17,9 +16,8 @@ namespace Structurizr
         static void Main(string[] args)
         {
             Workspace workspace = new Workspace("Contoso University", "A software architecture model of the Contoso University sample project.");
-            Model.Model model = workspace.Model;
+            Model model = workspace.Model;
             ViewSet views = workspace.Views;
-            views.Configuration.Metadata = "Top";
             Styles styles = views.Configuration.Styles;
 
             Person universityStaff = model.AddPerson("University Staff", "A staff member of the Contoso University.");
@@ -32,6 +30,7 @@ namespace Structurizr
             Container database = contosoUniversity.AddContainer("Database", "Stores information about students, courses and instructors", "Microsoft SQL Server Express LocalDB");
             database.AddTags("Database");
             universityStaff.Uses(webApplication, "Uses", "HTTPS");
+            webApplication.Uses(database, "Reads from and writes to");
 
             ComponentFinder componentFinder = new ComponentFinder(
                 webApplication,
@@ -39,35 +38,50 @@ namespace Structurizr
                 new TypeBasedComponentFinderStrategy(
                     new InterfaceImplementationTypeMatcher(typeof(System.Web.Mvc.IController), null, "ASP.NET MVC Controller"),
                     new ExtendsClassTypeMatcher(typeof(System.Data.Entity.DbContext), null, "Entity Framework DbContext")
-                ),
-                new TypeSummaryComponentFinderStrategy(@"C:\Users\simon\ContosoUniversity\ContosoUniversity.sln", "ContosoUniversity")
+                )
+                //new TypeSummaryComponentFinderStrategy(@"C:\Users\simon\ContosoUniversity\ContosoUniversity.sln", "ContosoUniversity")
             );
             componentFinder.FindComponents();
 
-            // wire up the user to the web MVC controllers
+            // connect the user to the web MVC controllers
             webApplication.Components.ToList().FindAll(c => c.Technology == "ASP.NET MVC Controller").ForEach(c => universityStaff.Uses(c, "uses"));
 
-            // and all DbContext components to the database
+            // connect all DbContext components to the database
             webApplication.Components.ToList().FindAll(c => c.Technology == "Entity Framework DbContext").ForEach(c => c.Uses(database, "Reads from and writes to"));
 
             // link the components to the source code
             foreach (Component component in webApplication.Components)
             {
-                if (component.SourcePath != null)
+                foreach (CodeElement codeElement in component.Code)
                 {
-                    component.SourcePath = component.SourcePath.Replace(@"C:\Users\simon\ContosoUniversity\", "https://github.com/simonbrowndotje/ContosoUniversity/blob/master/");
-                    component.SourcePath = component.SourcePath.Replace('\\', '/');
+                    if (codeElement.Url != null)
+                    {
+                        codeElement.Url = codeElement.Url.Replace(new Uri(@"C:\Users\simon\ContosoUniversity\").AbsoluteUri, "https://github.com/simonbrowndotje/ContosoUniversity/blob/master/");
+                        codeElement.Url = codeElement.Url.Replace('\\', '/');
+                    }
                 }
             }
 
-            SystemContextView contextView = views.CreateContextView(contosoUniversity);
+            // rather than creating a component model for the database, let's simply link to the DDL
+            // (this is really just an example of linking an arbitrary element in the model to an external resource)
+            database.Url = "https://github.com/simonbrowndotje/ContosoUniversity/tree/master/ContosoUniversity/Migrations";
+
+            SystemContextView contextView = views.CreateSystemContextView(contosoUniversity, "Context", "The system context view for the Contoso University system.");
             contextView.AddAllElements();
 
-            ContainerView containerView = views.CreateContainerView(contosoUniversity);
+            ContainerView containerView = views.CreateContainerView(contosoUniversity, "Containers", "The containers that make up the Contoso University system.");
             containerView.AddAllElements();
 
-            ComponentView componentView = views.CreateComponentView(webApplication);
+            ComponentView componentView = views.CreateComponentView(webApplication, "Components", "The components inside the Contoso University web application.");
             componentView.AddAllElements();
+
+            // create an example dynamic view for a feature
+            DynamicView dynamicView = views.CreateDynamicView(webApplication, "GetCoursesForDepartment", "A summary of the \"get courses for department\" feature.");
+            Component courseController = webApplication.GetComponentWithName("CourseController");
+            Component schoolContext = webApplication.GetComponentWithName("SchoolContext");
+            dynamicView.Add(universityStaff, "Requests the list of courses from", courseController);
+            dynamicView.Add(courseController, "Uses", schoolContext);
+            dynamicView.Add(schoolContext, "Gets a list of courses from", database);
 
             // add some styling
             styles.Add(new ElementStyle(Tags.Person) { Background = "#0d4d4d", Color = "#ffffff", Shape = Shape.Person });
@@ -77,9 +91,8 @@ namespace Structurizr
             styles.Add(new ElementStyle(Tags.Component) { Background = "#407f7f", Color = "#ffffff" });
 
             StructurizrClient structurizrClient = new StructurizrClient("key", "secret");
-            structurizrClient.MergeWorkspace(9581, workspace);
-
-            System.Console.ReadKey();
+            structurizrClient.MergeWorkspace(5651, workspace);
         }
     }
 }
+
