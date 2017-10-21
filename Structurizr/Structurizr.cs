@@ -1,7 +1,7 @@
 ﻿using System;
 using Structurizr.Analysis;
-using Structurizr.Client;
 using System.Linq;
+using Structurizr.Api;
 
 namespace Structurizr
 {
@@ -35,7 +35,7 @@ namespace Structurizr
             ComponentFinder componentFinder = new ComponentFinder(
                 webApplication,
                 typeof(ContosoUniversity.MvcApplication).Namespace, // doing this typeof forces the ContosoUniversity assembly to be loaded
-                new TypeBasedComponentFinderStrategy(
+                new TypeMatcherComponentFinderStrategy(
                     new InterfaceImplementationTypeMatcher(typeof(System.Web.Mvc.IController), null, "ASP.NET MVC Controller"),
                     new ExtendsClassTypeMatcher(typeof(System.Data.Entity.DbContext), null, "Entity Framework DbContext")
                 )
@@ -52,7 +52,7 @@ namespace Structurizr
             // link the components to the source code
             foreach (Component component in webApplication.Components)
             {
-                foreach (CodeElement codeElement in component.Code)
+                foreach (CodeElement codeElement in component.CodeElements)
                 {
                     if (codeElement.Url != null)
                     {
@@ -91,7 +91,7 @@ namespace Structurizr
             styles.Add(new ElementStyle(Tags.Component) { Background = "#407f7f", Color = "#ffffff" });
 
             StructurizrClient structurizrClient = new StructurizrClient("key", "secret");
-            structurizrClient.MergeWorkspace(5651, workspace);
+//            structurizrClient.MergeWorkspace(5651, workspace);
         }
     }
 }
